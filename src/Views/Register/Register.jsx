@@ -2,6 +2,8 @@ import { Box, Button, Divider, TextField, Typography } from "@mui/material";
 import { createClient } from "../../Services/ClientService";
 import { useFormik } from "formik";
 import { validationClientSchema } from "../../Utils/yup.client.schema";
+import { useState } from "react";
+import AlertModal from "../../Components/Modal/AlertModal";
 
 const centerStyle = {
     display: "flex",
@@ -19,6 +21,22 @@ const centerForm = {
 }
 
 const Register = () => {
+    const [showModal, setShowModal] = useState(false);
+    const [errorMessage, setErrorMessage] = useState({
+        title: "",
+        body: "",
+
+    });
+
+    const handleClose = () => {
+        setShowModal(false);
+        setErrorMessage({
+            title: "",
+            body: "",
+        });
+    }
+
+
     const formik = useFormik({
         initialValues: {
             rs: "",
@@ -31,8 +49,23 @@ const Register = () => {
         onSubmit: (values) => {
             createClient(values)
                 .then(response => console.log(response))
-                .catch(error => console.log(error));
-        },
+                .catch(error => {
+                    if (error.response.data.error === "El RUC ya está registrado") {
+                        setErrorMessage({
+                            title: "RUC duplicado",
+                            body: "El RUC ya está registrado, por favor verifique los datos ingresados o contacte con el administrador del sistema al correo correo@correo.com",
+                        });
+                        setShowModal(true);
+                    } else {
+                        setErrorMessage({
+                            title: error.response.data.error,
+                            body: "Ha ocurrido un error, por favor intente nuevamente o contacte con el administrador del sistema al correo correo@correo.com",
+                        });
+                        setShowModal(true);
+                    }
+                }
+                );
+        }
     });
 
 
@@ -103,6 +136,15 @@ const Register = () => {
                 ) : null}
                 <Button variant="contained" onClick={formik.handleSubmit}>Registrar</Button>
             </Box>
+            {showModal && (
+                <AlertModal
+                    modalTitle={errorMessage.title}
+                    modalBody={errorMessage.body}
+                    open={showModal}
+                    onClose={() => handleClose()}
+                />
+            )}
+
         </Box>
     )
 }
